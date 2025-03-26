@@ -51,21 +51,19 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 #
-# Fetch the appropriate versions of the clang and binutils source code
-#
-RUN git clone --depth=1 --branch llvmorg-$VERCLANG https://github.com/llvm/llvm-project.git \
-    && wget https://sourceware.org/pub/binutils/releases/binutils-$VERBINUTILS.tar.xz
-
-#
 # Compile Clang, currently using a cmake preset file to manage the build configuration
 # but this could be simplified to provide the arguments directly here.
 #
-COPY CMakePresets.json /tmp/llvm-project/llvm
+COPY CMakePresets.json /tmp
 RUN for target in $TARGETS; do \
     echo "Compiling Clang for $target" \
+        && cd /tmp \
+        && git clone --depth=1 --branch llvmorg-$VERCLANG https://github.com/llvm/llvm-project.git \
         && cd /tmp/llvm-project/llvm \
+        && cp /tmp/CMakePresets.json . \
         && cmake --preset="$target" \
-        && cmake --build --preset="$target"; \
+        && cmake --build --preset="$target" \
+        && rm -rf /tmp/llvm-project; \
 done
 
 #
@@ -74,6 +72,7 @@ done
 RUN for target in $TARGETS; do \
     echo "Compiling BinUtils for $target" \
         && cd /tmp \
+        && wget https://sourceware.org/pub/binutils/releases/binutils-$VERBINUTILS.tar.xz \
         && tar -xvf "binutils-$VERBINUTILS.tar.xz" \
         && cd binutils-$VERBINUTILS \
         && ./configure --prefix="/opt/tools/clang/$target" \
@@ -83,12 +82,10 @@ RUN for target in $TARGETS; do \
         && make -j$(nproc) \
         && make install \
         && cd .. \
-        && rm -rf binutils-$VERBINUTILS; \
+        && rm -rf binutils-$VERBINUTILS \
+        && rm binutils-$VERBINUTILS.tar.xz; \
 done        
     
-# Cleaning up to reduce the size of the docker
-RUN rm -rf llvm-project \
-    && rm binutils-$VERBINUTILS.tar.xz
 
 # Set the default command (this could be a start-up script or a terminal)
 CMD ["/bin/bash"]
