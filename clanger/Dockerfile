@@ -30,11 +30,10 @@ FROM debian:bookworm-slim
 ARG VERCLANG="20.1.1"
 ARG VERBINUTILS="2.43.1"
 
-# Define the targets that we want to compile for, you can add or remove targets
-# as required, don't forget you'll need to update the CMakePresets.json file to
-# include the new target.
-ARG TARGETS="aarch64-linux-gnu"
-#ARG TARGETS="arm-none-eabihf arm-linux-gnueabihf aarch64-linux-gnu"
+# Define the targets that we want to compile for, this only affects the binutils
+# compilation, the clang compilation is universal so supports any targets compatible
+# with the CPU targets that our clang compilers support. 
+ARG TARGETS="arm-none-eabihf arm-linux-gnueabihf aarch64-linux-gnu"
 
 #
 # It is preinstalled with:
@@ -52,22 +51,23 @@ RUN apt-get update \
 
 #
 # Compile Clang, currently using a cmake preset file to manage the build configuration
-# but this could be simplified to provide the arguments directly here.
+# but this could be simplified to provide the arguments directly here. Clang is universal
+# so we tell it which LLVM CPU targets we require and it will automatically support all
+# the target triples that are compatible with those CPU targets.
 #
 COPY CMakePresets.json /tmp
-RUN for target in $TARGETS; do \
-    echo "Compiling Clang for $target" \
+RUN echo "Compiling Clang for $target" \
         && cd /tmp \
         && git clone --depth=1 --branch llvmorg-$VERCLANG https://github.com/llvm/llvm-project.git \
         && cd /tmp/llvm-project/llvm \
         && cp /tmp/CMakePresets.json . \
-        && cmake --preset="$target" \
-        && cmake --build --preset="$target" \
-        && rm -rf /tmp/llvm-project; \
-done
+        && cmake --preset="universal-clang" \
+        && cmake --build --preset="universal-clang" \
+        && rm -rf /tmp/llvm-project
 
 #
-# Compile BinUtils, using the traditional configure, make, make install process.
+# Compile BinUtils, using the traditional configure, make, make install process. This
+# must be done once for each of the target triples.
 #
 RUN for target in $TARGETS; do \
     echo "Compiling BinUtils for $target" \
@@ -75,17 +75,17 @@ RUN for target in $TARGETS; do \
         && wget https://sourceware.org/pub/binutils/releases/binutils-$VERBINUTILS.tar.xz \
         && tar -xvf "binutils-$VERBINUTILS.tar.xz" \
         && cd binutils-$VERBINUTILS \
-        && ./configure --prefix="/opt/tools/clang/$target" \
+        && ./configure --prefix="/opt/tools/binutils/$target" \
             --enable-gold \
             --enable-ld \
             --target="$target" \
+            --disable-multilib \
         && make -j$(nproc) \
         && make install \
         && cd .. \
         && rm -rf binutils-$VERBINUTILS \
         && rm binutils-$VERBINUTILS.tar.xz; \
 done        
-    
 
 # Set the default command (this could be a start-up script or a terminal)
 CMD ["/bin/bash"]

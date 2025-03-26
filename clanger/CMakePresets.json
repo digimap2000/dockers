@@ -8,62 +8,24 @@
 
   "configurePresets": [
 		{
-			"name": "arm-none-eabihf",
-			"description": "ARMv7 Bare Metal Hard Float (32bit)",
+			"name": "universal-clang",
+            "description": "Single Clang for AArch64, ARMv7 Bare Metal, and ARMv7 Linux",
 			"generator": "Ninja",
-			"binaryDir": "${sourceDir}/build-arm-none-eabihf",
+			"binaryDir": "${sourceDir}/build-universal-clang",
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_INSTALL_PREFIX": "/opt/tools/clang/arm-none-eabihf",
-                "LLVM_DEFAULT_TARGET_TRIPLE": "arm-none-eabihf",
-                "LLVM_ENABLE_PROJECTS": "clang",
-                "LLVM_TARGETS_TO_BUILD": "ARM"
-            }
-		},
-		{
-			"name": "arm-linux-gnueabihf",
-			"description": "ARMv7 Linux Hard Float (32bit)",
-			"generator": "Ninja",
-			"binaryDir": "${sourceDir}/build-arm-linux-gnueabihf",
-			"cacheVariables": {
-				"CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_INSTALL_PREFIX": "/opt/tools/clang/arm-linux-gnueabihf",
-                "LLVM_DEFAULT_TARGET_TRIPLE": "arm-linux-gnueabihf",
-                "LLVM_ENABLE_PROJECTS": "clang",
-                "LLVM_TARGETS_TO_BUILD": "ARM"
-            }
-		},
-		{
-			"name": "aarch64-linux-gnu",
-			"description": "ARMv8 Linux (64bit)",
-			"generator": "Ninja",
-			"binaryDir": "${sourceDir}/build-aarch64-linux-gnu",
-			"cacheVariables": {
-				"CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_INSTALL_PREFIX": "/opt/tools/clang/aarch64-linux-gnu",
+                "CMAKE_INSTALL_PREFIX": "/opt/tools/clang",
                 "LLVM_DEFAULT_TARGET_TRIPLE": "aarch64-linux-gnu",
-                "LLVM_ENABLE_PROJECTS": "clang",
-                "LLVM_TARGETS_TO_BUILD": "ARM"
+			    "LLVM_ENABLE_PROJECTS": "clang",
+			    "LLVM_TARGETS_TO_BUILD": "AArch64;ARM"            
             }
 		}
   ],
 
   "buildPresets": [
 		{
-			"name": "arm-none-eabihf",
-			"configurePreset": "arm-none-eabihf",
-            "jobs": 6,
-            "targets": ["install"]
-    	},
-		{
-			"name": "arm-linux-gnueabihf",
-			"configurePreset": "arm-linux-gnueabihf",
-            "jobs": 6,
-            "targets": ["install"]
-    	},
-		{
-			"name": "aarch64-linux-gnu",
-			"configurePreset": "aarch64-linux-gnu",
+			"name": "universal-clang",
+			"configurePreset": "universal-clang",
             "jobs": 6,
             "targets": ["install"]
     	}
